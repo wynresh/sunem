@@ -20,6 +20,7 @@ export interface IRole extends Document {
     id: Types.ObjectId | string;
     name: string;
     permissions: string[];
+    description?: string;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -47,6 +48,7 @@ const RoleSchema: Schema<IRole> = new Schema(
 export const RoleZodSchema = z.object({
     name: z.string().min(1, "Le nom du rôle est requis."),
     permissions: z.array(z.string()).optional(),
+    description: z.string().optional(),
 });
 
 export const RequiredAttrs = ['name', 'permissions'] as const;
@@ -66,7 +68,7 @@ RoleSchema.plugin(root);
 RoleSchema.statics.findByRole = async function (name: string): Promise<IRole | null> {
     const role = await this.findOne({ $or: [
         { name: name },
-        { id: name }
+        { _id: name }
     ] });
 
     if (!role) {
