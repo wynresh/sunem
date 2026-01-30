@@ -124,7 +124,7 @@ export const ConvertToStore = (data: any) => {
         ...(data.email && { email: data.email }),
         ...(data.manager && { manager: new Types.ObjectId(data.manager) }),
         ...(data.openingHours && { openingHours: data.openingHours }),
-        ...(data.area && { area: data.area }),
+        ...(data.area && { area: Number(data.area) }),
         ...(data.status !== undefined && { status: data.status }),
     };
 };

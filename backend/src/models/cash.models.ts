@@ -70,6 +70,22 @@ export const RequiredCashRegisterAttrs = [
     'online',
 ];
 
+
+// ==================
+// Convertir
+// ========================
+
+export const convertToCashRegister = (data: any) => {
+    return {
+        ...(data.store && { store: data.store }),
+        ...(data.registerNumber && { registerNumber: Number(data.registerNumber) }),
+        ...(data.status && { status: data.status }),
+        ...(data.deviceId && { deviceId: data.deviceId }),
+        ...(data.online !== undefined && { online: data.online }),
+        ...(data.amount !== undefined && { amount: Number(data.amount) }),
+    };
+}
+
 // ==================
 // Plugin de pagination
 // ==================

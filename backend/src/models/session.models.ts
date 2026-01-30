@@ -6,7 +6,6 @@
 
 import mongoose, { Schema, Document, Types, PaginateModel } from 'mongoose';
 import paginate from 'mongoose-paginate-v2';
-import { z } from "zod";
 
 import root from '@/models/root.models';
 

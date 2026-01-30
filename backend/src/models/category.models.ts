@@ -81,8 +81,8 @@ export const convertToCategory = (data: any) => {
         ...(data.name && { name: data.name }),
         ...(data.description && { description: data.description }),
         ...(data.parentCategory && { parentCategory: data.parentCategory }),
-        ...(data.marginRate !== undefined && { marginRate: data.marginRate }),
-        ...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
+        ...(data.marginRate !== undefined && { marginRate: Number(data.marginRate) }),
+        ...(data.sortOrder !== undefined && { sortOrder: Number(data.sortOrder) }),
         ...(data.status && { status: data.status }),
     };
 };

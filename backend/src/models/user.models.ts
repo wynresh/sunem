@@ -176,7 +176,7 @@ UserSchema.methods.comparePassword = async function (candidatePassword: string):
 // Static Method
 // ==================
 
-UserSchema.statics.findByUser = async function (name: string): Promise<IUser | null> {
+UserSchema.statics.findByUser = async function (name: string): Promise<IUser> {
     const user = await this.findOne({ $or: [
         { username: name },
         { _id: name },
@@ -185,7 +185,7 @@ UserSchema.statics.findByUser = async function (name: string): Promise<IUser | n
     ] });
 
     if (!user) {
-        return null;
+        throw new Error('Utilisateur non trouvé');
     }
 
     return user;
