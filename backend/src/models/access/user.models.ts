@@ -7,13 +7,13 @@
 import mongoose, { Schema, Document, Types, PaginateModel } from 'mongoose';
 import paginate from 'mongoose-paginate-v2';
 import { parsePhoneNumberWithError, isValidPhoneNumber } from 'libphonenumber-js';
-import { z } from "zod";
+import { email, z } from "zod";
 import bcrypt from 'bcrypt';
 
 import root from '@/models/root.models';
 
 
-// ==================
+// =================
 // Interface de base
 // =================
 
@@ -65,81 +65,76 @@ const UserSchema: Schema<IUser> = new Schema(
 // Validation Zod
 // ==================
 
-const UserZodSchema = z.object({
-    username: z.string().min(3, "Le nom d'utilisateur doit comporter au moins 3 caractères."),
-    email: z.email("Adresse e-mail invalide."),
-    phone: z.string().refine((val) => isValidPhoneNumber(val), {
-        message: "Numéro de téléphone invalide.",
+export const UserValidation = {
+    create: z.object({
+        username: z.string().min(3, "Le nom d'utilisateur doit comporter au moins 3 caractères."),
+        email: z.email("Adresse e-mail invalide."),
+        phone: z.string().refine((val) => isValidPhoneNumber(val), {
+            message: "Numéro de téléphone invalide.",
+        }),
+        firstname: z.string().min(1, "Le prénom est requis."),
+        lastname: z.string().min(1, "Le nom de famille est requis."),
+        store: z.string().min(1, "L'ID du magasin est requis."),
+        password: z.string().min(6, "Le mot de passe doit comporter au moins 6 caractères."),
+        role: z.string().min(1, "L'ID du rôle est requis."),
+        status: z.enum(['active', 'inactive', 'suspended']).optional(),
+        online: z.boolean().optional(),
     }),
-    firstname: z.string().min(1, "Le prénom est requis."),
-    lastname: z.string().min(1, "Le nom de famille est requis."),
-    store: z.string().min(1, "L'ID du magasin est requis."),
-    password: z.string().min(6, "Le mot de passe doit comporter au moins 6 caractères."),
-    role: z.string().min(1, "L'ID du rôle est requis."),
-    status: z.enum(['active', 'inactive', 'suspended']),
-    online: z.boolean(),
-});
-
-export const UserUpdateZodSchema = UserZodSchema.partial({
-    password: true,
-});
-
-export const RequiredSignupAttrs = [
-    'username', 
-    'email', 
-    'phone', 
-    'firstname', 
-    'lastname', 
-    'store', 
-    'password', 
-    'role'
-] as const;
-
-export const RequiredLoginAttrs = [
-    'username', 
-    'password'
-] as const;
-
-export const RequiredUpdateAttrs = [
-    'username',
-    'firstname', 
-    'lastname',
-] as const;
-
-export const RequiredCriticalAttrs = [
-    'store',
-    'role',
-    'status',
-] as const;
-
-export const RequiredOtpAttrs = [
-    'phone',
-    'email',
-] as const;
-
-export const RequiredPasswordResetAttrs = [
-    'password',
-] as const;
+    update: z.object({
+        username: z.string().min(3, "Le nom d'utilisateur doit comporter au moins 3 caractères.").optional(),
+        email: z.email("Adresse e-mail invalide.").optional(),
+        phone: z.string().refine((val) => isValidPhoneNumber(val), {
+            message: "Numéro de téléphone invalide.",
+        }).optional(),
+        firstname: z.string().min(1, "Le prénom est requis.").optional(),
+        lastname: z.string().min(1, "Le nom de famille est requis.").optional(),
+        store: z.string().min(1, "L'ID du magasin est requis.").optional(),
+        password: z.string().min(6, "Le mot de passe doit comporter au moins 6 caractères.").optional(),
+        role: z.string().min(1, "L'ID du rôle est requis.").optional(),
+        status: z.enum(['active', 'inactive', 'suspended']).optional(),
+        online: z.boolean().optional(),
+    }),
+    delete: z.object({
+        id: z.string().min(1, "L'ID de l'utilisateur est requis."),
+    })
+};
 
 
-// ========================
-// Convertir
-// ========================
+export const requiredFields = {
+    create: [
+        'username', 
+        'email', 
+        'phone', 
+        'firstname', 
+        'lastname',
+        'store', 
+        'password', 
+        'role'
+    ],
+    update: [
+        'username',
+        'phone', 
+        'firstname', 
+        'lastname',
+    ],
+    email: [
+        'email', 
+    ],
+    risk: [
+        'store',
+        'role',
+        'status'
+    ],
+    password: [
+        'password'
+    ],
+    login: [
+        'name',
+        'password'
+    ]
 
-export const convertToUser = (data: any) => {
-    return {
-        ...(data.username && { username: data.username }),
-        ...(data.email && { email: data.email }),
-        ...(data.phone && { phone: data.phone }),
-        ...(data.firstname && { firstname: data.firstname }),
-        ...(data.lastname && { lastname: data.lastname }),
-        ...(data.store && { store: new Types.ObjectId(data.store) }),
-        ...(data.password && { password: data.password }),
-        ...(data.role && { role: new Types.ObjectId(data.role) }),
-        ...(data.status && { status: data.status }),
-        ...(data.online !== undefined && { online: data.online }),
-    }
-}
+} as const;
+
 
 // ========================
 // Appliquer les plugins
@@ -159,8 +154,7 @@ UserSchema.pre<IUser>('save', async function () {
     }
 
     if (this.isModified('phone') || this.isNew) {
-        const phoneNumber = parsePhoneNumberWithError(this.phone);
-        this.phone = phoneNumber.format('E.164');
+        parsePhoneNumberWithError(this.phone);
     }
 });
 
@@ -179,7 +173,7 @@ UserSchema.methods.comparePassword = async function (candidatePassword: string):
 UserSchema.statics.findByUser = async function (name: string): Promise<IUser> {
     const user = await this.findOne({ $or: [
         { username: name },
-        { _id: name },
+        { id: name },
         { email: name },
         { phone: name }
     ] });
@@ -190,6 +184,7 @@ UserSchema.statics.findByUser = async function (name: string): Promise<IUser> {
 
     return user;
 };
+
 
 // ==================
 // Modèle Mongoose

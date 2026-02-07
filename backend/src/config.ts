@@ -48,6 +48,16 @@ export const SERVER_CONFIG = {
 } as const;
 
 
+// ============================================================
+// CONFIGURATION DE L'APPLICATION
+// ============================================================
+export const APP_CONFIG = {
+  NAME: process.env.APP_NAME || 'MyApp',
+  DESCRIPTION: process.env.APP_DESCRIPTION || 'API pour gérer les utilisateurs et les rôles',
+  VERSION: process.env.APP_VERSION || '1.0.0',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
+} as const;
+
 
 // ============================================================
 // CONFIGURATION DE LA BASE DE DONNÉES
@@ -83,20 +93,33 @@ export const DATABASE_CONFIG = {
 } as const;
 
 
-
 // ============================================================
 // CONFIGURATION DE LA SÉCURITÉ
 // ============================================================
 export const SECURITY_CONFIG = {
   // Origines CORS autorisées
   ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+
+  // Méthodes HTTP autorisées
+  ALLOWED_METHODS: process.env.ALLOWED_METHODS || '',
+
+  // En-têtes autorisés
+  ALLOWED_HEADERS: process.env.ALLOWED_HEADERS || '',
+
+  // credentials (cookies) autorisés  
+  ALLOW_CREDENTIALS: process.env.ALLOW_CREDENTIALS === 'true',
   
   // Clé secrète JWT
   JWT_SECRET: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
   
   // Durée de validité du token JWT
   JWT_ACCESS_EXPIRATION: process.env.JWT_ACCESS_EXPIRATION || '24h' ,
+  
   JWT_REFRESH_EXPIRATION: process.env.JWT_REFRESH_EXPIRATION  || '7d',
+  
+  JWT_RESET_PASSWORD_EXPIRATION: process.env.JWT_RESET_PASSWORD_EXPIRATION || '1h',
+  
+  JWT_VERIFY_EMAIL_EXPIRATION: process.env.JWT_VERIFY_EMAIL_EXPIRATION || '24h',
   
   // Clé secrète pour les sessions
   SESSION_SECRET: process.env.SESSION_SECRET || 'session-secret-change-in-production',
@@ -106,17 +129,34 @@ export const SECURITY_CONFIG = {
   
   // Rate limiting
   RATE_LIMIT: {
-    WINDOW_MS: 15 * 60 * 1000, // 15 minutes
+    WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW || '15', 10) * 60 * 1000, // 15 minutes
     MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
   },
-
-  // Twilio Configuration
-  TWILIO: {
-    ACCOUNT_SID: getEnvVariable('TWILIO_ACCOUNT_SID', 'your-twilio-account-sid'),
-    AUTH_TOKEN: getEnvVariable('TWILIO_AUTH_TOKEN', 'your-twilio-auth-token'),
-    PHONE_NUMBER: getEnvVariable('TWILIO_PHONE_NUMBER', '+1234567890'),
-  },
 } as const;
+
+
+// ============================================================
+// CONFIGURATION DES SERVICES EXTERNES
+// ============================================================
+
+export const EXTERNAL_SERVICES_CONFIG = {
+  // Configuration email
+  EMAIL: {
+    HOST: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    PORT: parseInt(process.env.EMAIL_PORT || '587', 10),
+    SECURE: process.env.EMAIL_SECURE === 'true',
+    USER: process.env.EMAIL_USER || '',
+    PASSWORD: process.env.EMAIL_PASSWORD || '',
+    FROM: process.env.EMAIL_FROM || 'noreply@example.com',
+  },
+
+} as const;
+
+
+
+// ici je suis
+
+
 
 // ============================================================
 // CONFIGURATION DES MIDDLEWARES
@@ -152,15 +192,6 @@ export const MIDDLEWARE_CONFIG = {
 // CONFIGURATION DES SERVICES EXTERNES
 // ============================================================
 export const EXTERNAL_SERVICES = {
-  // Configuration email
-  EMAIL: {
-    HOST: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    PORT: parseInt(process.env.EMAIL_PORT || '587', 10),
-    SECURE: process.env.EMAIL_SECURE === 'true',
-    USER: process.env.EMAIL_USER || '',
-    PASSWORD: process.env.EMAIL_PASSWORD || '',
-    FROM: process.env.EMAIL_FROM || 'noreply@example.com',
-  },
   
   // Configuration AWS S3
   AWS: {
@@ -183,6 +214,13 @@ export const EXTERNAL_SERVICES = {
     BASE_URL: process.env.API_BASE_URL || '',
     API_KEY: process.env.API_KEY || '',
     TIMEOUT: parseInt(process.env.API_TIMEOUT || '5000', 10),
+  },
+
+  // Twilio Configuration
+  TWILIO: {
+    ACCOUNT_SID: getEnvVariable('TWILIO_ACCOUNT_SID', 'your-twilio-account-sid'),
+    AUTH_TOKEN: getEnvVariable('TWILIO_AUTH_TOKEN', 'your-twilio-auth-token'),
+    PHONE_NUMBER: getEnvVariable('TWILIO_PHONE_NUMBER', '+1234567890'),
   },
 } as const;
 
@@ -352,9 +390,12 @@ export function validateConfig(): void {
 export default {
   SERVER: SERVER_CONFIG,
   DATABASE: DATABASE_CONFIG,
+  APP: APP_CONFIG,
+
+
   SECURITY: SECURITY_CONFIG,
   MIDDLEWARE: MIDDLEWARE_CONFIG,
-  EXTERNAL_SERVICES,
+  EXTERNAL_SERVICES: EXTERNAL_SERVICES_CONFIG,
   LOGGING: LOGGING_CONFIG,
   UPLOAD: UPLOAD_CONFIG,
   TIMEOUT: TIMEOUT_CONFIG,
