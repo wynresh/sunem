@@ -7,10 +7,11 @@
 import mongoose, { Schema, Document, Types, PaginateModel } from 'mongoose';
 import paginate from 'mongoose-paginate-v2';
 import { parsePhoneNumberWithError, isValidPhoneNumber } from 'libphonenumber-js';
-import { email, z } from "zod";
+import { z } from "zod";
 import bcrypt from 'bcrypt';
 
 import root from '@/models/root.models';
+import LoginAttempt from './auth.models';
 
 
 // =================
@@ -25,7 +26,7 @@ export interface IUser extends Document {
     firstname: string;
     lastname: string;
     // Référence au magasin (store)
-    store: Types.ObjectId | string;
+    store?: Types.ObjectId | string;
     password: string;
     role: Types.ObjectId | string;
     status: 'active' | 'inactive' | 'suspended';
@@ -48,7 +49,7 @@ const UserSchema: Schema<IUser> = new Schema(
         phone: { type: String, required: true, unique: true },
         firstname: { type: String, required: true },
         lastname: { type: String, required: true },
-        store: { type: Schema.Types.ObjectId, ref: 'Store', required: true },
+        store: { type: Schema.Types.ObjectId, ref: 'Store' },
         password: { type: String, required: true },
         role: { type: Schema.Types.ObjectId, ref: 'Role', required: true },
         status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },
@@ -74,7 +75,7 @@ export const UserValidation = {
         }),
         firstname: z.string().min(1, "Le prénom est requis."),
         lastname: z.string().min(1, "Le nom de famille est requis."),
-        store: z.string().min(1, "L'ID du magasin est requis."),
+        store: z.string().optional(),
         password: z.string().min(6, "Le mot de passe doit comporter au moins 6 caractères."),
         role: z.string().min(1, "L'ID du rôle est requis."),
         status: z.enum(['active', 'inactive', 'suspended']).optional(),
@@ -151,6 +152,11 @@ UserSchema.pre<IUser>('save', async function () {
     if (this.isModified('password') || this.isNew) {
         const salt = await bcrypt.genSalt(10);
         this.password = await bcrypt.hash(this.password, salt);
+    }
+
+    if (this.isNew) {
+        const attempt = new LoginAttempt({user: this._id });
+        await attempt.save();
     }
 
     if (this.isModified('phone') || this.isNew) {

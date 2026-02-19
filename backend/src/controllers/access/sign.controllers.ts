@@ -10,6 +10,7 @@ import MailService from "@/services/mail.services";
 import TokenService from "@/services/token.services";
 
 import { SECURITY_CONFIG } from "@/config";
+import LoginAttempt from "@/models/access/auth.models";
 
 
 
@@ -73,10 +74,10 @@ export class SignControllers {
     public static async signUp(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
             const token = req.params.token as string;
-            if (!token) res.status(400).json({ messge: 'invalid !!!' });
+            if (!token) return res.status(400).json({ messge: 'invalid !!!' });
 
             const payload = TokenService.verifyToken(token);
-            if (!payload) res.status(400).json({ messge: 'invalid !!!' });
+            if (!payload) return res.status(400).json({ messge: 'invalid !!!' });
 
             const user = new User(payload);
             await user.save();
@@ -108,9 +109,30 @@ export class SignControllers {
 
             if (!user) return res.status(400).json({ message: 'user not found' });
 
+            const loginAttempt = await LoginAttempt.findOne({ user: user.id });
+            if (!loginAttempt) return res.status(400).json({ message: 'not possible' });
+
+            if (loginAttempt.attempts >= 5) {
+                MailService.sendMail(user.email, 'ALERT! ALERT! ALERT!', 'APPLQUER UN FORGOT PASSWORD');
+                return;
+            }
+
             const check = await user.comparePassword(data.password);
-            
-            if (!check) return res.status(401).json({ message: 'password invalid !!!' });
+            if (!check) {
+                await LoginAttempt.updateOne(
+                    { _id: loginAttempt.id },
+                    {
+                        lastAttempt: new Date(),
+                        $inc: { attempts: 1 }
+                    }
+                )
+                
+                return res.status(401).json({ message: 'password invalid !!!' });
+            }
+
+            loginAttempt.attempts = 0;
+            loginAttempt.lastAttempt = new Date();
+            await loginAttempt.save();
 
             res.status(200).json(await this.authenticate(user))
         } catch (error) {
@@ -125,8 +147,16 @@ export class SignControllers {
     // déconnecte un utilisateur en invalidant son token JWT
     // ========================
 
-    public static async signOut(req: Request, res: Response, next: NextFunction): Promise<Response> {
+    public static async signOut(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
+            const user = await User.findById(req.user);
+            if (!user) return res.status(400).json({ message: 'user not found' });
+
+            user.online = false;
+            user.lastLogin = new Date();
+            await user.save();
+
+            res.status(200).json({ messge: 'success' });
         } catch (error) {
             next(error);
         }
@@ -139,8 +169,21 @@ export class SignControllers {
     // envoie un email de réinitialisation de mot de passe à l'utilisateur
     // ========================
 
-    public static async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<Response> {
+    public static async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
+            const email = req.body.email;
+
+            // trouver l'utilisateur
+            const user = await User.findOne({ email });
+            if (!user) return res.status(400).json({ message: 'User not found' });
+
+            // creation du token de password
+            const token = TokenService.generateToken({ id: user.id }, SECURITY_CONFIG.JWT_VERIFY_EMAIL_EXPIRATION);
+
+            // envoyer le mail
+            await MailService.sendForgotPassword(email, token);
+
+            res.status(200).json({ message: 'success' });
         } catch (error) {
             next(error);
         }
@@ -153,8 +196,27 @@ export class SignControllers {
     // réinitialise le mot de passe de l'utilisateur à partir d'un token de réinitialisation valide
     // ========================
 
-    public static async resetPassword(req: Request, res: Response, next: NextFunction): Promise<Response> {
+    public static async resetPassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
+            const token = req.params.token as string;
+            if (!token) res.status(400).json({ messge: 'invalid !!!' });
+
+            const credentials = req.body;
+
+            if (credentials.newPassword != credentials.confirmPassword) res.status(400).json({ message: 'no match !!!' });
+
+            const payload = TokenService.verifyToken(token) as object;
+            if (!payload) return res.status(400).json({ messge: 'invalid !!!' });
+
+            const user = await User.findOne(payload);
+            if (!user) return res.status(400).json({ message: 'User not found' });
+
+            user.password = credentials.newPassword;
+            user.online = false;
+            user.lastLogin = new Date();
+            await user.save();
+
+            res.status(200).json({ message: 'success' });
         } catch (error) {
             next(error);
         }
@@ -167,12 +229,12 @@ export class SignControllers {
     // vérifie un code OTP envoyé à l'utilisateur pour des opérations sensibles
     // ========================
 
-    public static async verifyOtp(req: Request, res: Response, next: NextFunction): Promise<Response> {
-        try {
-        } catch (error) {
-            next(error);
-        }
-    }
+    // public static async verifyOtp(req: Request, res: Response, next: NextFunction): Promise<Response> {
+    //     try {
+    //     } catch (error) {
+    //         next(error);
+    //     }
+    // }
 
 
     // ========================
@@ -181,8 +243,29 @@ export class SignControllers {
     // renvoie un code OTP à l'utilisateur si le précédent a expiré ou n'a pas été reçu
     // ========================
 
-    public static async resendOtp(req: Request, res: Response, next: NextFunction): Promise<Response> {
+    // public static async resendOtp(req: Request, res: Response, next: NextFunction): Promise<Response> {
+    //     try {
+    //     } catch (error) {
+    //         next(error);
+    //     }
+    // }
+
+
+    // ==============================
+    // Resend Link
+    //
+    // renvoie le lien
+    // ==============================
+
+    public static async ResendLink(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
+            // creation du token
+            const token = TokenService.generateToken({ ...req.body }, SECURITY_CONFIG.JWT_VERIFY_EMAIL_EXPIRATION);
+
+            // 2.2 - envoyer le mail
+            await MailService.sendVerificationEmail(req.body.email, token);
+
+            res.status(200).json({ message: 'email envoyé' });
         } catch (error) {
             next(error);
         }

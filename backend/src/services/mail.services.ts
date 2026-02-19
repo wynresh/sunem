@@ -41,4 +41,11 @@ export default class MailService {
         await this.sendMail(to, 'Vérification de votre adresse e-mail', htmlContent);
     }
 
+    // reinitialisation de mot de pass
+    public static async sendForgotPassword(to: string, token: string): Promise<void> {
+        const forgotLink = `${config.APP.FRONTEND_URL}/forgot-password?token=${token}`;
+        const htmlContent = ``
+        await this.sendMail(to, 'REINITIALISATION DE MOT DE PASS', htmlContent)
+    }
+
 }
