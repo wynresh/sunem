@@ -176,20 +176,20 @@ UserSchema.methods.comparePassword = async function (candidatePassword: string):
 // Static Method
 // ==================
 
-UserSchema.statics.findByUser = async function (name: string): Promise<IUser> {
-    const user = await this.findOne({ $or: [
-        { username: name },
-        { id: name },
-        { email: name },
-        { phone: name }
-    ] });
+// UserSchema.statics.findByUser = async function (name: string): Promise<IUser> {
+//     const user = await this.findOne({ $or: [
+//         { username: name },
+//         { id: name },
+//         { email: name },
+//         { phone: name }
+//     ] });
 
-    if (!user) {
-        throw new Error('Utilisateur non trouvé');
-    }
+//     if (!user) {
+//         throw new Error('Utilisateur non trouvé');
+//     }
 
-    return user;
-};
+//     return user;
+// };
 
 
 // ==================
@@ -197,7 +197,7 @@ UserSchema.statics.findByUser = async function (name: string): Promise<IUser> {
 // ==================
 
 interface UserModel<T extends Document> extends PaginateModel<T> {
-    findByUser(name: string): Promise<IUser | null>;
+    // findByUser(name: string): Promise<IUser | null>;
 }
 
 const User = mongoose.model<IUser, UserModel<IUser>>('User', UserSchema);

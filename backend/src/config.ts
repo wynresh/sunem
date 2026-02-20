@@ -59,7 +59,8 @@ export const APP_CONFIG = {
 } as const;
 
 
-// ============================================================
+// ========================================
+        // 3. On exécute la recherche sur le modèle User (Remplace 'User' par ton modèle)====================
 // CONFIGURATION DE LA BASE DE DONNÉES
 // ============================================================
 export const DATABASE_CONFIG = {
@@ -106,10 +107,13 @@ export const SECURITY_CONFIG = {
   // En-têtes autorisés
   ALLOWED_HEADERS: process.env.ALLOWED_HEADERS || '',
 
-  // credentials (cookies) autorisés  
+  // credentials (cookies) auto
+        // 3. On exécute la recherche sur le modèle User (Remplace 'User' par ton modèle)risés  
   ALLOW_CREDENTIALS: process.env.ALLOW_CREDENTIALS === 'true',
   
+        // 3. On exécute la recherche sur le modèle User (Remplace 'User' par ton modèle)
   // Clé secrète JWT
+        // 3. On exécute la recherche sur le modèle User (Remplace 'User' par ton modèle)
   JWT_SECRET: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
   
   // Durée de validité du token JWT

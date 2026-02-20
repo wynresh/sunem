@@ -48,4 +48,12 @@ export default class MailService {
         await this.sendMail(to, 'REINITIALISATION DE MOT DE PASS', htmlContent)
     }
 
+    public static async sendIntrusionMail(to: string): Promise<void> {
+
+    }
+
+    public static async sendUpdatedVerificationEmail(to: string, token: string): Promise<void> {
+        
+    }
+
 }

@@ -18,6 +18,7 @@ export class SignControllers {
 
     private static async authenticate(user: IUser) {
         user.online = true;
+        user.lastLogin = undefined;
         await user.save();
 
         const access = TokenService.generateToken({ id: user.id, role: user.role, store: user.store}, SECURITY_CONFIG.JWT_ACCESS_EXPIRATION);
@@ -85,7 +86,7 @@ export class SignControllers {
             const data = await this.authenticate(user)
 
             res.status(201).json({ 
-                response: data, 
+                data: data, 
                 message: 'success' 
             });
 
@@ -118,7 +119,7 @@ export class SignControllers {
             if (!loginAttempt) return res.status(400).json({ message: 'not possible' });
 
             if (loginAttempt.attempts >= 5) {
-                MailService.sendMail(user.email, 'ALERT! ALERT! ALERT!', 'APPLQUER UN FORGOT PASSWORD');
+                MailService.sendIntrusionMail(user.email);
                 return;
             }
 
@@ -142,7 +143,7 @@ export class SignControllers {
             const q = await this.authenticate(user)
 
             res.status(200).json({ 
-                response: q, 
+                data: q, 
                 message: 'success' 
             });
         } catch (error) {
