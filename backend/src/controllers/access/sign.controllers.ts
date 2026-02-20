@@ -12,6 +12,8 @@ import TokenService from "@/services/token.services";
 import { SECURITY_CONFIG } from "@/config";
 import LoginAttempt from "@/models/access/auth.models";
 
+import speakeasy from 'speakeasy';
+
 
 
 export class SignControllers {
@@ -140,6 +142,47 @@ export class SignControllers {
             loginAttempt.lastAttempt = new Date();
             await loginAttempt.save();
 
+            if (user.isTwoFactorEnabled) return res.status(200).json({ message: 'two factor required' });
+
+            const q = await this.authenticate(user)
+
+            res.status(200).json({ 
+                data: q, 
+                message: 'success' 
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+
+    // ========================
+    // verify 2FA
+    //
+    // vérifie le code de l'authentification à deux facteurs (2FA) fourni par l'utilisateur lors de la connexion
+    // ========================
+    
+    public static async verifyTwoFactorAuth(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            const { token, id } = req.body;
+            const user = await User.findById(id);
+    
+            if (!user || !user.twoFactorSecret) {
+                return res.status(400).json({ message: "2FA non configuré" });
+            }
+    
+            // Vérifier le jeton (token)
+            const verified = speakeasy.totp.verify({
+                secret: user.twoFactorSecret,
+                encoding: 'base32',
+                token: token
+            });
+    
+            if (!verified) {
+                return res.status(401).json({ message: "Code invalide" });
+            }
+
+                
             const q = await this.authenticate(user)
 
             res.status(200).json({ 

@@ -31,6 +31,8 @@ export interface IUser extends Document {
     role: Types.ObjectId | string;
     status: 'active' | 'inactive' | 'suspended';
     online: boolean;
+    twoFactorSecret?: string;
+    isTwoFactorEnabled: boolean;
     lastLogin?: Date;
     createdAt?: Date;
     updatedAt?: Date;
@@ -55,6 +57,8 @@ const UserSchema: Schema<IUser> = new Schema(
         status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },
         online: { type: Boolean, default: false },
         lastLogin: { type: Date },
+        twoFactorSecret: { type: String },
+        isTwoFactorEnabled: { type: Boolean, default: false },
     },
     {
         timestamps: true,

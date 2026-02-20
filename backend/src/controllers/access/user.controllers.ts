@@ -11,6 +11,9 @@ import MailService from "@/services/mail.services";
 import TokenService from "@/services/token.services";
 import { Request, Response, NextFunction } from "express";
 
+import speakeasy from 'speakeasy';
+import QRCode from 'qrcode';
+
 
 
 export class UserControllers {
@@ -177,6 +180,13 @@ export class UserControllers {
     
     public static async refreshToken(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
+            const refresh = req.body.refresh;
+            const payload = TokenService.verifyToken(refresh);
+            if (!payload) return res.status(401).json({ message: 'unauthorized' });
+
+            const access = TokenService.generateToken(payload, config.SECURITY.JWT_ACCESS_EXPIRATION);
+
+            res.status(200).json({ data: access, message: 'success' });
         } catch (error) {
             next(error);
         }
@@ -191,6 +201,28 @@ export class UserControllers {
 
     public static async enableTwoFactorAuth(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
+            const user = await User.findById(req.user);
+            if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
+
+            // Générer un secret unique
+            const secret = speakeasy.generateSecret({
+                name: `Sunem:${user.email}`
+            });
+
+            // Enregistrer le secret temporairement dans la base
+            user.twoFactorSecret = secret.base32;
+            await user.save();
+
+            // Générer le QR Code pour l'application mobile
+            const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url!);
+
+            res.status(200).json({
+                data: {
+                    qrCode: qrCodeUrl,
+                    secret: secret.base32 // Optionnel: pour saisie manuelle
+                },
+                message: 'success'
+            });
         } catch (error) {
             next(error);
         }
@@ -205,6 +237,28 @@ export class UserControllers {
 
     public static async disableTwoFactorAuth(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
+            const { token } = req.body;
+            const user = await User.findById(req.user);
+
+            if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
+
+            // Optionnel mais recommandé : vérifier le code avant de couper la sécurité
+            const verified = speakeasy.totp.verify({
+                secret: user.twoFactorSecret!,
+                encoding: 'base32',
+                token: token
+            });
+
+            if (!verified) {
+                return res.status(401).json({ message: "Code invalide, désactivation refusée" });
+            }
+
+            // Supprimer les données 2FA
+            user.twoFactorSecret = undefined;
+            user.isTwoFactorEnabled = false;
+            await user.save();
+
+            res.status(200).json({ success: true, message: "2FA désactivé" });
         } catch (error) {
             next(error);
         }
@@ -219,6 +273,31 @@ export class UserControllers {
 
     public static async verifyTwoFactorAuth(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
+            const { token } = req.body;
+            const user = await User.findById(req.user);
+
+            if (!user || !user.twoFactorSecret) {
+                return res.status(400).json({ message: "2FA non configuré" });
+            }
+
+            // Vérifier le jeton (token)
+            const verified = speakeasy.totp.verify({
+                secret: user.twoFactorSecret,
+                encoding: 'base32',
+                token: token
+            });
+
+            if (!verified) {
+                return res.status(401).json({ message: "Code invalide" });
+            }
+
+            // Activer officiellement le flag 2FA
+            if (!user.isTwoFactorEnabled) {
+                user.isTwoFactorEnabled = true;
+                await user.save();
+            }
+            
+            res.status(200).json({ message: "2FA vérifié et activé" });
         } catch (error) {
             next(error);
         }
