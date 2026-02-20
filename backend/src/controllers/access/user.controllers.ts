@@ -3,6 +3,7 @@
 // ============================================
 
 
+import User from "@/models/access/user.models";
 import { Request, Response, NextFunction } from "express";
 
 
@@ -17,6 +18,10 @@ export class UserControllers {
 
     public static async getAllUsers(req: Request, res: Response, next: NextFunction): Promise<Response> {
         try {
+            const user = await User.findById(req.user);
+            if (!user) return res.status(400).json({ message: 'not found' });
+
+            res.status(200).json({ response: user, message: 'success' });
         } catch (error) {
             next(error);
         }

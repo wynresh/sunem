@@ -82,7 +82,12 @@ export class SignControllers {
             const user = new User(payload);
             await user.save();
 
-            res.status(201).json(await this.authenticate(user));
+            const data = await this.authenticate(user)
+
+            res.status(201).json({ 
+                response: data, 
+                message: 'success' 
+            });
 
         } catch (error) {
             next(error);
@@ -134,7 +139,12 @@ export class SignControllers {
             loginAttempt.lastAttempt = new Date();
             await loginAttempt.save();
 
-            res.status(200).json(await this.authenticate(user))
+            const q = await this.authenticate(user)
+
+            res.status(200).json({ 
+                response: q, 
+                message: 'success' 
+            });
         } catch (error) {
             next(error);
         }
