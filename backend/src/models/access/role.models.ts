@@ -65,7 +65,7 @@ RoleSchema.plugin(root);
 // Static Method
 // ==================
 
-RoleSchema.statics.findByRole = async function (name: string): Promise<IRole | null> {
+RoleSchema.statics.findByName = async function (name: string): Promise<IRole | null> {
     const role = await this.findOne({ $or: [
         { name: name },
         { _id: name }

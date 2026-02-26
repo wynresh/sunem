@@ -28,7 +28,7 @@ export interface IUser extends Document {
     // Référence au magasin (store)
     store?: Types.ObjectId | string;
     password: string;
-    role: Types.ObjectId | string;
+    role: string;
     status: 'active' | 'inactive' | 'suspended';
     online: boolean;
     twoFactorSecret?: string;
@@ -53,7 +53,7 @@ const UserSchema: Schema<IUser> = new Schema(
         lastname: { type: String, required: true },
         store: { type: Schema.Types.ObjectId, ref: 'Store' },
         password: { type: String, required: true },
-        role: { type: Schema.Types.ObjectId, ref: 'Role', required: true },
+        role: { type: String, required: true },
         status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },
         online: { type: Boolean, default: false },
         lastLogin: { type: Date },
@@ -112,7 +112,7 @@ export const requiredFields = {
         'phone', 
         'firstname', 
         'lastname',
-        'store', 
+        'store',
         'password', 
         'role'
     ],

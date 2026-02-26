@@ -68,7 +68,9 @@ export class UserControllers {
 
     public static async getUserById(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
-            const user = await User.findById(req.user);
+            if (!req.user) return res.status(401).json({ message: 'unauthorized' });
+
+            const user = await User.findById(req.user.id);
             if (!user) return res.status(400).json({ message: 'not found' });
 
             res.status(200).json({ DataView: user, message: 'success' });
@@ -201,7 +203,9 @@ export class UserControllers {
 
     public static async enableTwoFactorAuth(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
-            const user = await User.findById(req.user);
+            if (!req.user) return res.status(401).json({ message: 'unauthorized' });
+
+            const user = await User.findById(req.user.id);
             if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
 
             // Générer un secret unique
@@ -237,8 +241,10 @@ export class UserControllers {
 
     public static async disableTwoFactorAuth(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
+            if (!req.user) return res.status(401).json({ message: 'unauthorized' });
+            
             const { token } = req.body;
-            const user = await User.findById(req.user);
+            const user = await User.findById(req.user.id);
 
             if (!user) return res.status(404).json({ message: "Utilisateur non trouvé" });
 
@@ -273,8 +279,10 @@ export class UserControllers {
 
     public static async verifyTwoFactorAuth(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
+            if (!req.user) return res.status(401).json({ message: 'unauthorized' });
+            
             const { token } = req.body;
-            const user = await User.findById(req.user);
+            const user = await User.findById(req.user.id);
 
             if (!user || !user.twoFactorSecret) {
                 return res.status(400).json({ message: "2FA non configuré" });

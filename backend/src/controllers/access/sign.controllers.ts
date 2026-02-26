@@ -204,7 +204,9 @@ export default class SignControllers {
 
     public static async signOut(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
-            const user = await User.findById(req.user);
+            if (!req.user) return res.status(401).json({ message: 'unauthorized' });
+            
+            const user = await User.findById(req.user.id);
             if (!user) return res.status(400).json({ message: 'user not found' });
 
             user.online = false;
