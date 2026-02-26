@@ -16,7 +16,7 @@ import speakeasy from 'speakeasy';
 
 
 
-export class SignControllers {
+export default class SignControllers {
 
     private static async authenticate(user: IUser) {
         user.online = true;
@@ -164,7 +164,8 @@ export class SignControllers {
     
     public static async verifyTwoFactorAuth(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
         try {
-            const { token, id } = req.body;
+            const { token } = req.body;
+            const { id } = req.params;
             const user = await User.findById(id);
     
             if (!user || !user.twoFactorSecret) {
