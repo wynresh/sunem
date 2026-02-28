@@ -16,7 +16,7 @@ import QRCode from 'qrcode';
 
 
 
-export class UserControllers {
+export default class UserControllers {
 
     private static query(q: any): Object {
         const qs: any = {};
@@ -33,6 +33,44 @@ export class UserControllers {
         if (q.login) qs.lastLogin = { $gte: new Date(q.loginDate) };
 
         return qs;
+    }
+
+
+    // ========================
+    // Sign Up
+    //
+    // enregistre un nouvel utilisateur
+    // ========================
+
+    public static async sign(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            const data = { ...req.body };
+
+            // 1- verifier si l'utilisateur existe déjà
+            const existingUser = await User.findOne({ $or: [
+                { email: data.email },
+                { phone: data.phone },
+                { username: data.username }
+            ] });
+
+            if (existingUser) {
+                return res.status(400).json({ 
+                    message: 'Un utilisateur avec cet email, téléphone ou nom d\'utilisateur existe déjà.' 
+                });
+            }
+
+            // 2- exiger la verification par email
+            // 2.1- creation du token de verification
+            const token = TokenService.generateToken(data, config.SECURITY.JWT_VERIFY_EMAIL_EXPIRATION);
+
+            // 2.2 - envoyer le mail
+            await MailService.sendVerificationEmail(data.email, token);
+
+            res.status(200).json({ message: 'email envoyé' });
+
+        } catch (error) {
+            next(error);
+        }
     }
 
     // ========================
@@ -155,6 +193,29 @@ export class UserControllers {
 
 
     // ========================
+    // False Delete User
+    // ========================
+
+    public static async removeUser(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+        try {
+            const user = await User.findById(req.params.id);
+            if (!user) return res.status(400).json({ message: 'not found' });
+
+            user.status = 'deleted';
+            user.online = false;
+            user.lastLogin = undefined;
+            user.deletedAt = new Date();
+
+            await user.save();
+
+            res.status(204).json()
+        } catch (error) {
+            next(error);
+        }
+    }
+
+
+    // ========================
     // Delete User
     //
     // supprime un utilisateur
@@ -172,7 +233,6 @@ export class UserControllers {
             next(error);
         }
     }
-
 
     // ========================
     // Refresh Token

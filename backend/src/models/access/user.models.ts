@@ -29,13 +29,14 @@ export interface IUser extends Document {
     store?: Types.ObjectId | string;
     password: string;
     role: string;
-    status: 'active' | 'inactive' | 'suspended';
+    status: 'active' | 'inactive' | 'suspended' | 'deleted';
     online: boolean;
     twoFactorSecret?: string;
     isTwoFactorEnabled: boolean;
     lastLogin?: Date;
     createdAt?: Date;
     updatedAt?: Date;
+    deletedAt?: Date;
     comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -54,9 +55,10 @@ const UserSchema: Schema<IUser> = new Schema(
         store: { type: Schema.Types.ObjectId, ref: 'Store' },
         password: { type: String, required: true },
         role: { type: String, required: true },
-        status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },
+        status: { type: String, enum: ['active', 'inactive', 'suspended', 'deleted'], default: 'active' },
         online: { type: Boolean, default: false },
         lastLogin: { type: Date },
+        deletedAt: { type: Date },
         twoFactorSecret: { type: String },
         isTwoFactorEnabled: { type: Boolean, default: false },
     },
@@ -104,7 +106,7 @@ export const UserValidation = {
         store: z.string().min(1, "L'ID du magasin est requis.").optional(),
         password: passwordSchema.optional(),
         role: z.string().min(1, "L'ID du rôle est requis.").optional(),
-        status: z.enum(['active', 'inactive', 'suspended']).optional(),
+        status: z.enum(['active', 'inactive', 'suspended', 'deleted']).optional(),
         online: z.boolean().optional(),
     }),
     delete: z.object({
@@ -121,8 +123,8 @@ export const requiredFields = {
         'firstname', 
         'lastname',
         'store',
-        'password', 
-        'role'
+        'password',
+        'role',
     ],
     update: [
         'username',

@@ -14,14 +14,6 @@ import auth from '@/middlewares/auth.middlewares';
 const router = Router();
 
 
-// register
-router.post(
-    '/sign',
-    requiredFields([...fields.create]),
-    validate(UserValidation.create),
-    Ctrl.sign
-)
-
 // register save
 router.get(
     '/signup/?token',

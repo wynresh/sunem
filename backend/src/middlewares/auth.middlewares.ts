@@ -17,7 +17,7 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
         if (!payload) res.status(401).json({ message: 'object not found' });
 
         const user = await User.findById((payload as any).id);
-        if (!user || (user.status != 'active' && user.online == true)) return res.status(401).json({ message: 'unauthorized' });
+        if (!user || (user.status != 'active' && user.status != 'deleted' && user.online == true)) return res.status(401).json({ message: 'unauthorized' });
 
         req.user = { id: user.id.toString(), role: user.role };
         next();

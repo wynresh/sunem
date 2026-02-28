@@ -30,44 +30,6 @@ export default class SignControllers {
     }
 
 
-    // ========================
-    // Sign Up
-    //
-    // enregistre un nouvel utilisateur
-    // ========================
-
-    public static async sign(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        try {
-            const data = { ...req.body };
-
-            // 1- verifier si l'utilisateur existe déjà
-            const existingUser = await User.findOne({ $or: [
-                { email: data.email },
-                { phone: data.phone },
-                { username: data.username }
-            ] });
-
-            if (existingUser) {
-                return res.status(400).json({ 
-                    message: 'Un utilisateur avec cet email, téléphone ou nom d\'utilisateur existe déjà.' 
-                });
-            }
-
-            // 2- exiger la verification par email
-            // 2.1- creation du token de verification
-            const token = TokenService.generateToken(data, SECURITY_CONFIG.JWT_VERIFY_EMAIL_EXPIRATION);
-
-            // 2.2 - envoyer le mail
-            await MailService.sendVerificationEmail(data.email, token);
-
-            res.status(200).json({ message: 'email envoyé' });
-
-        } catch (error) {
-            next(error);
-        }
-    }
-
-
     // ============================
     // Sign Up
     // 
@@ -83,7 +45,6 @@ export default class SignControllers {
             if (!payload) return res.status(400).json({ messge: 'invalid !!!' });
 
             const user = new User(payload);
-            user.role = 'USER';
             await user.save();
 
             const data = await this.authenticate(user)
@@ -98,37 +59,6 @@ export default class SignControllers {
         }
     }
 
-
-    // ========================
-    // Sign Staff
-    // ========================
-
-    public static async staff(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
-        try {
-            const data = { ...req.body };
-
-            // 1- verifier si l'utilisateur existe déjà
-            const existingUser = await User.findOne({ $or: [
-                { email: data.email },
-                { phone: data.phone },
-                { username: data.username }
-            ] });
-
-            if (existingUser) {
-                return res.status(400).json({ 
-                    message: 'Un utilisateur avec cet email, téléphone ou nom d\'utilisateur existe déjà.' 
-                });
-            }
-
-            const user = new User(data);
-            await user.save();
-
-            res.status(201).json({ message: 'new staff create successfuly' });
-
-        } catch (error) {
-            next(error);
-        }
-    }
 
     // ========================
     // Sign In
