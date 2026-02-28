@@ -59,4 +59,48 @@ router.put(
 )
 
 // delete my account
-router.get()
+router.get(
+    '/users/?id',
+    auth,
+    Ctrl.removeUser
+)
+
+// delete user
+router.delete(
+    '/admin/?id',
+    auth,
+    permissions(['user.delete']),
+    Ctrl.deleteUser
+)
+
+// refresh token
+router.post(
+    '/refresh',
+    auth,
+    requiredFields(['refresh']),
+    Ctrl.refreshToken
+)
+
+// enable 2FA
+router.get(
+    '/enable2fa',
+    auth,
+    Ctrl.enableTwoFactorAuth
+)
+
+// 2FA verify
+router.post(
+    '/2fa',
+    requiredFields(['token']),
+    Ctrl.verifyTwoFactorAuth
+)
+
+// disable 2FA
+router.post(
+    '/disable2fa',
+    auth,
+    requiredFields(['token']),
+    Ctrl.disableTwoFactorAuth
+)
+
+export default router;

@@ -208,7 +208,7 @@ export default class UserControllers {
 
             await user.save();
 
-            res.status(204).json()
+            res.status(204).send()
         } catch (error) {
             next(error);
         }
@@ -228,7 +228,7 @@ export default class UserControllers {
 
             user.deleteOne();
 
-            res.status(204).json()
+            res.status(204).send()
         } catch (error) {
             next(error);
         }

@@ -6,8 +6,7 @@
 import { Router } from 'express';
 import Ctrl from '@/controllers/access/sign.controllers';
 import requiredFields from '@/middlewares/requiredfiels.middlewares';
-import { requiredFields as fields, UserValidation } from '@/models/access/user.models';
-import validate from '@/middlewares/validators.middlewares';
+import { requiredFields as fields } from '@/models/access/user.models';
 import auth from '@/middlewares/auth.middlewares';
 
 
