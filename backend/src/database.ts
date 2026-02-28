@@ -51,22 +51,22 @@ export async function disconnect(): Promise<void> {
 
 // Événement: Connexion établie
 mongoose.connection.on('connected', () => {
-  console.log('🟢 Mongoose connecté à MongoDB');
+    console.log('🟢 Mongoose connecté à MongoDB');
 });
 
 // Événement: Erreur de connexion
 mongoose.connection.on('error', (err) => {
-  console.error('❌ Erreur de connexion Mongoose:', err);
+    console.error('❌ Erreur de connexion Mongoose:', err);
 });
 
 // Événement: Déconnexion
 mongoose.connection.on('disconnected', () => {
-  console.log('🔴 Mongoose déconnecté de MongoDB');
+    console.log('🔴 Mongoose déconnecté de MongoDB');
 });
 
 // Événement: Reconnexion
 mongoose.connection.on('reconnected', () => {
-  console.log('🟡 Mongoose reconnecté à MongoDB');
+    console.log('🟡 Mongoose reconnecté à MongoDB');
 });
 
 
@@ -75,8 +75,8 @@ mongoose.connection.on('reconnected', () => {
 // ============================================================
 // Fermer la connexion proprement lors de l'arrêt de l'application
 process.on('SIGINT', async () => {
-  await disconnect();
-  process.exit(0);
+    await disconnect();
+    process.exit(0);
 });
 
 
@@ -84,7 +84,7 @@ process.on('SIGINT', async () => {
 // VÉRIFIER L'ÉTAT DE LA CONNEXION
 // ============================================================
 export function isConnected(): boolean {
-  return mongoose.connection.readyState === 1;
+    return mongoose.connection.readyState === 1;
 }
 
 
@@ -92,23 +92,23 @@ export function isConnected(): boolean {
 // OBTENIR LES STATISTIQUES DE LA BASE DE DONNÉES
 // ============================================================
 export async function getDatabaseStats() {
-  try {
-    if (!isConnected() || !mongoose.connection.db) {
-      return { error: 'Base de données non connectée' };
+    try {
+        if (!isConnected() || !mongoose.connection.db) {
+            return { error: 'Base de données non connectée' };
+        }
+    
+        const db = mongoose.connection.db;
+        const stats = await db.stats();
+    
+        return {
+            database: db.databaseName,
+            collections: stats.collections,
+            dataSize: `${(stats.dataSize / 1024 / 1024).toFixed(2)} MB`,
+            indexSize: `${(stats.indexSize / 1024 / 1024).toFixed(2)} MB`,
+            objects: stats.objects,
+        };
+    } catch (error: any) {
+        console.error('Erreur lors de la récupération des stats:', error);
+        return { error: error.message };
     }
-    
-    const db = mongoose.connection.db;
-    const stats = await db.stats();
-    
-    return {
-      database: db.databaseName,
-      collections: stats.collections,
-      dataSize: `${(stats.dataSize / 1024 / 1024).toFixed(2)} MB`,
-      indexSize: `${(stats.indexSize / 1024 / 1024).toFixed(2)} MB`,
-      objects: stats.objects,
-    };
-  } catch (error: any) {
-    console.error('Erreur lors de la récupération des stats:', error);
-    return { error: error.message };
-  }
 }
