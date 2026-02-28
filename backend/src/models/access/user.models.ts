@@ -70,6 +70,14 @@ const UserSchema: Schema<IUser> = new Schema(
 // Validation Zod
 // ==================
 
+const passwordSchema = z.string()
+    .min(10, "Le mot de passe doit contenir au moins 10 caractères")
+    .regex(/[A-Z]/, "Il faut au moins une majuscule")
+    .regex(/[a-z]/, "Il faut au moins une minuscule")
+    .regex(/[0-9]/, "Il faut au moins un chiffre")
+    .regex(/[!@#$%^&*]/, "Il faut au moins un caractère spécial");
+
+    
 export const UserValidation = {
     create: z.object({
         username: z.string().min(3, "Le nom d'utilisateur doit comporter au moins 3 caractères."),
@@ -80,7 +88,7 @@ export const UserValidation = {
         firstname: z.string().min(1, "Le prénom est requis."),
         lastname: z.string().min(1, "Le nom de famille est requis."),
         store: z.string().optional(),
-        password: z.string().min(6, "Le mot de passe doit comporter au moins 6 caractères."),
+        password: passwordSchema,
         role: z.string().min(1, "L'ID du rôle est requis."),
         status: z.enum(['active', 'inactive', 'suspended']).optional(),
         online: z.boolean().optional(),
@@ -94,7 +102,7 @@ export const UserValidation = {
         firstname: z.string().min(1, "Le prénom est requis.").optional(),
         lastname: z.string().min(1, "Le nom de famille est requis.").optional(),
         store: z.string().min(1, "L'ID du magasin est requis.").optional(),
-        password: z.string().min(6, "Le mot de passe doit comporter au moins 6 caractères.").optional(),
+        password: passwordSchema.optional(),
         role: z.string().min(1, "L'ID du rôle est requis.").optional(),
         status: z.enum(['active', 'inactive', 'suspended']).optional(),
         online: z.boolean().optional(),
